@@ -1,0 +1,15 @@
+[
+  {
+    "id": "3baa06be-fc69-4ecd-9738-13534c57a172",
+    "courtId": "9b0768a2-257e-455c-ad4e-a16fb491ed6e",
+    "userId": "3",
+    "date": "2025-11-19",
+    "startTime": "18:00",
+    "endTime": "19:00",
+    "totalPrice": 26000,
+    "paymentMethod": "transferencia",
+    "transferTiming": "inmediato",
+    "status": "completed",
+    "createdAt": "2025-11-18T14:58:41.635Z"
+  }
+]

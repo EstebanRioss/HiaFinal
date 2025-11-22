@@ -1,0 +1,42 @@
+[
+  {
+    "id": "1",
+    "email": "admin@example.com",
+    "password": "$2a$10$MCXiUAD1wiqT5ejT7XD/a.xDn4TP2aUUH.7hkMj0a9QPUaj4EHjcC",
+    "name": "Administrador",
+    "role": "admin",
+    "createdAt": "2025-11-10T18:24:58.969Z"
+  },
+  {
+    "id": "2",
+    "email": "owner@example.com",
+    "password": "$2a$10$9mKtE.nXYlCzniLUmAhp5.sBGZyP1TqTFSkf37VdQHFsS/osMefDq",
+    "name": "Dueño de Cancha",
+    "role": "owner",
+    "createdAt": "2025-11-10T18:24:58.969Z"
+  },
+  {
+    "id": "3",
+    "email": "player@example.com",
+    "password": "$2a$10$fzec0YjRZ5DmP1GT1hyNve1COvgUl65PEenYPjkuRfh1Tsmcw3bGe",
+    "name": "Jugador",
+    "role": "player",
+    "createdAt": "2025-11-10T18:24:58.969Z"
+  },
+  {
+    "id": "4233ab81-0d4c-4551-83bf-8c169a38a305",
+    "name": "Vladimir",
+    "email": "cupuepentapa2@gmail.com",
+    "password": "$2a$10$q2oR3jy0lZWObZjXIJJymOeHXcq7Ymssf2amAP8bn4aaVF5HhADYq",
+    "role": "player",
+    "createdAt": "2025-11-10T18:27:52.464Z"
+  },
+  {
+    "id": "af91a3a2-4b0b-4baf-9fec-e389ad93ef20",
+    "name": "vladimir",
+    "email": "cachi@gmail.com",
+    "password": "$2a$10$gUnizxq27jCyH5HG20kMNeSKEpRoJC0iEqyFp/UKhQvxC8jMRxDI2",
+    "role": "player",
+    "createdAt": "2025-11-10T21:19:55.741Z"
+  }
+]

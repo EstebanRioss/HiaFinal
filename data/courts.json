@@ -1,0 +1,79 @@
+[
+  {
+    "id": "9b0768a2-257e-455c-ad4e-a16fb491ed6e",
+    "name": "Granaderos",
+    "sport": "futbol",
+    "location": "Julio Sanchez",
+    "pricePerHour": 26000,
+    "ownerId": "2",
+    "description": "Cancha de futbol 7 (Mínimo 5 jugadores por equipo)",
+    "averageRating": 5,
+    "totalRatings": 1,
+    "createdAt": "2025-11-10T19:38:00.599Z",
+    "availability": [
+      {
+        "dayOfWeek": "lunes",
+        "ranges": [
+          {
+            "startTime": "10:00",
+            "endTime": "22:00"
+          }
+        ]
+      },
+      {
+        "dayOfWeek": "martes",
+        "ranges": [
+          {
+            "startTime": "10:00",
+            "endTime": "22:00"
+          }
+        ]
+      },
+      {
+        "dayOfWeek": "miercoles",
+        "ranges": [
+          {
+            "startTime": "10:00",
+            "endTime": "22:00"
+          }
+        ]
+      },
+      {
+        "dayOfWeek": "jueves",
+        "ranges": [
+          {
+            "startTime": "10:00",
+            "endTime": "22:00"
+          }
+        ]
+      },
+      {
+        "dayOfWeek": "viernes",
+        "ranges": [
+          {
+            "startTime": "10:00",
+            "endTime": "22:00"
+          }
+        ]
+      },
+      {
+        "dayOfWeek": "sabado",
+        "ranges": [
+          {
+            "startTime": "10:00",
+            "endTime": "22:00"
+          }
+        ]
+      },
+      {
+        "dayOfWeek": "domingo",
+        "ranges": [
+          {
+            "startTime": "10:00",
+            "endTime": "22:00"
+          }
+        ]
+      }
+    ]
+  }
+]
