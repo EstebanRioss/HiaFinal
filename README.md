@@ -1,94 +1,189 @@
-# Sistema de Alquiler de Canchas Deportivas
+Sistema de Alquiler de Canchas Deportivas
 
-Sistema web para alquiler de canchas de distintos deportes con sistema de pago, autenticación por roles y sistema de puntuación.
+Documentación completa + Stack Tecnológico + Arquitectura + Docker + CI/CD
 
-## Características
+Sistema web desarrollado con Next.js, con gestión de canchas, reservas, calificaciones y roles de usuario (jugador, dueño, administrador).
+Incluye documentación, arquitectura, contenedorización con Docker y pipeline CI/CD con GitHub Actions.
 
-- 🔐 Sistema de autenticación con tres roles: Administrador, Dueño de Cancha y Jugador
-- 🏀 Filtro por deporte para buscar canchas
-- ⭐ Sistema de puntuación de canchas
-- 📊 Filtro por puntuación (mejores a peores)
-- 💳 Sistema de pago (Transferencia, Tarjeta, Efectivo)
-- 📅 Sistema de reservas
-- 👨‍💼 Panel de administración para gestionar canchas
-- 🕒 Turnos de 1 hora con disponibilidad definida por cada dueño
+🧩 1. Identificación del Stack Tecnológico
 
-## Instalación
+Frontend / Fullstack
+   Framework: Next.js 14 (App Router)
+   Biblioteca UI: React 18
+   Lenguaje: TypeScript
+   Estilos: CSS global (globals.css) + componentes
 
-```bash
-npm install
-```
+Backend / API
+   API Routes en /app/api/*
+   Autenticación: JWT
+   Hashing: bcryptjs
+   IDs: uuid
 
-## Desarrollo
+Dependencias principales
+   next
+   react
+   react-dom
+   bcryptjs
+   jsonwebtoken
+   uuid
 
-```bash
-npm run dev
-```
+Persistencia
+   Archivos JSON en /data:
+      users.json
+      courts.json
+      reservations.json
+      ratings.json
 
-Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
+Infraestructura
 
-## Usuarios por Defecto
+   Docker (Dockerfile multi-stage)
+   CI/CD: GitHub Actions
 
-El sistema incluye tres usuarios de ejemplo (todos con contraseña: `123456`):
+2. Arquitectura del Sistema
 
-- **Administrador**: `admin@example.com` - Acceso al panel de administración
-- **Dueño de Cancha**: `owner@example.com` - Puede ver sus canchas
-- **Jugador**: `player@example.com` - Puede hacer reservas y calificar canchas
+Cliente (Browser)
+     ↓
+Next.js — App Router
+     ↓
+API interna (app/api/*)
+     ↓
+Persistencia (JSON)
 
-## Funcionalidades Principales
+Componentes principales
+   Frontend: páginas Next.js en /app
+   API interna: módulos REST (/app/api/*)
+   Autenticación: JWT + bcrypt
+   Base de datos simulada: lectura/escritura de JSON
+   Lógica de negocio: /lib
+   CI/CD: GitHub Actions para build y test
 
-### Para Jugadores:
-- Registrarse e iniciar sesión
-- Buscar canchas por deporte
-- Filtrar canchas por puntuación
-- Reservar canchas con diferentes métodos de pago
-- Calificar canchas después de completar una reserva
+Flujos principales
+   Autenticación y roles
+   Gestión de canchas
+   Reservas
+   Calificaciones
+   Aprobación de canchas (admin)
 
-### Para Dueños de Cancha:
-- Agregar su primera cancha directamente
-- Solicitar permiso al administrador para agregar más canchas
-- Ver sus canchas registradas
-- Ver el estado de sus solicitudes
-- Ver estadísticas de puntuación
-- Configurar horarios disponibles por día y por rango
+3. Instalación del Proyecto
 
-### Para Administradores:
-- Agregar nuevas canchas al sistema
-- Ver y gestionar solicitudes de canchas de los dueños
-- Aprobar o rechazar solicitudes de canchas
-- Ver todas las canchas registradas
-- Gestionar usuarios
+Instalar dependencias
+   npm install
 
-## Estructura del Proyecto
+Modo desarrollo
+   npm run dev
 
-- `/app` - Páginas y rutas de Next.js
-- `/lib` - Utilidades y funciones auxiliares
-- `/types` - Definiciones de tipos TypeScript
-- `/data` - Base de datos JSON (se crea automáticamente)
+Abrir: http://localhost:3000
 
-## Sistema de Solicitudes de Canchas
+Build de producción
+   npm run build
+   npm start
 
-Los dueños de canchas tienen un sistema especial para agregar canchas:
+4. Usuarios por defecto
+Contraseña para todos: 123456
+   Rol	   Email	               Función
+   Admin	   admin@example.com    Aprueba solicitudes y gestiona canchas
+   Dueño	   owner@example.com    Maneja sus canchas
+   Jugador  player@example.com   Reserva y califica
 
-1. **Primera Cancha**: Los dueños pueden agregar su primera cancha directamente sin necesidad de aprobación.
+5. Funcionalidades
+Jugador
+   Registro/login
+   Ver canchas disponibles
+   Filtrar por deporte o puntuación
+   Realizar reservas
+   Calificar canchas
 
-2. **Canchas Adicionales**: Para agregar más canchas, los dueños deben:
-   - Solicitar permiso al administrador desde su panel
-   - El administrador revisa la solicitud
-   - El administrador puede aprobar (crea la cancha automáticamente) o rechazar la solicitud
+Dueño
+   Añadir su primera cancha
+   Solicitar agregar más canchas
+   Configurar horarios
+   Ver calificaciones de sus canchas
 
-## Horarios y Reservas
+Administrador
+   Aprobar/rechazar solicitudes de dueños
+   Crear canchas
+   Ver todas las canchas
 
-- Cada turno dura exactamente **1 hora** y se elige a partir de los rangos definidos por el dueño.
-- Los dueños pueden cargar múltiples bloques por día (ej. 10:00‑13:00 y 17:00‑23:00).
-- Solo usuarios autenticados como **jugadores** o **dueños** pueden reservar.
-- El sistema valida que el horario seleccionado esté disponible y no reservado previamente.
+6. Reservas y horarios
 
-## Notas
+Turnos de 1 hora
+Dueño define rangos por día
+Validación automática de disponibilidad
+Después de completada → jugador puede calificar
 
-- El sistema usa archivos JSON para almacenar datos (simulación de base de datos)
-- Las contraseñas se almacenan hasheadas usando bcrypt
-- El sistema de pago es simulado (no realiza transacciones reales)
-- Las reservas se marcan como "completadas" automáticamente para permitir calificaciones
-- Los dueños solo pueden agregar una cancha directamente; las adicionales requieren aprobación del administrador
+7. Manual de Instalación de Docker (Windows + WSL2)
 
+   1) Activar WSL2
+      
+   2) Instalar Docker Desktop
+   Activar:
+      “Use WSL2 based engine”
+      “Ubuntu” en integración WSL
+   3) Build y run
+      docker build -t hiafinal .
+      docker run -p 3000:3000 hiafinal
+   Acceder: http://localhost:3000
+
+8. Dockerfile del proyecto (explicación breve)
+
+Etapa builder: instala dependencias y build Next.js
+Etapa runner: imagen liviana node:18-alpine
+Se copian solo los archivos necesarios para producción
+
+9. CI/CD con GitHub Actions
+
+Pipeline automático ante cualquier push a main.
+
+✔ Instala dependencias
+✔ Ejecuta build Next.js
+✔ Construye contenedor Docker
+✔ Valida que la app arranque
+✔ Corre un curl de prueba
+Workflow usado
+
+   name: CI/CD - HIAFINAL
+
+   on:
+   push:
+      branches: [ "main" ]
+   pull_request:
+      branches: [ "main" ]
+
+   jobs:
+   build-test-docker:
+      runs-on: ubuntu-latest
+
+      steps:
+         - name: Checkout del código
+         uses: actions/checkout@v4
+
+         - name: Configurar Node 18
+         uses: actions/setup-node@v4
+         with:
+            node-version: 18
+
+         - name: Instalar dependencias
+         run: npm ci
+
+         - name: Verificar build de Next.js
+         run: npm run build
+
+         - name: Construir imagen Docker
+         run: docker build -t hiafinal .
+
+         - name: Probar contenedor
+         run: |
+            docker run -d -p 3000:3000 --name hiafinal hiafinal
+            sleep 15
+            curl -f http://localhost:3000 || (docker logs hiafinal && exit 1)
+
+         - name: Limpiar contenedor
+         if: always()
+         run: |
+            docker stop hiafinal || true
+            docker rm hiafinal || true
+11. Validación final del CI/CD
+   Hacer un commit cualquiera
+   Subir a main
+   Verificar en GitHub → Actions que pase todo ✔
+   CI/CD implementado correctamente
