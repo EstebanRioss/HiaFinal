@@ -31,9 +31,7 @@ jobs:
       - name: Probar que el contenedor arranca
         run: |
           docker run -d -p 3000:3000 --name hiafinal hiafinal:latest
-          # esperamos un poco a que arranque
           sleep 15
-          # probamos que responda algo en el puerto 3000
           curl -f http://localhost:3000 || (docker logs hiafinal && exit 1)
 
       - name: Parar y eliminar contenedor de prueba
@@ -41,9 +39,3 @@ jobs:
         run: |
           docker stop hiafinal || true
           docker rm hiafinal || true
-
-      - name: Tag y push de la imagen a Docker Hub
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
-        run: |
-          docker tag hiafinal:latest ${{ secrets.DOCKERHUB_USERNAME }}/hiafinal:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/hiafinal:latest
