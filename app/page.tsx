@@ -118,7 +118,7 @@ export default function Home() {
             <h4>Contacto</h4>
             <p>Av. Deportes 123, Ciudad</p>
             <p>+54 11 5555 5555</p>
-            <p>hola@playfields.com</p>
+            <p>Sistema de Gestión HIA FINAL - Update CI/CD</p>
           </div>
         </div>
         <p className="footer-copy">© {new Date().getFullYear()} PlayFields. Todos los derechos reservados.</p>
