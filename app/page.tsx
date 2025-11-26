@@ -121,6 +121,10 @@ export default function Home() {
             <p>Sistema de Gestión HIA FINAL - Update CI/CD</p>
           </div>
         </div>
+        <div className="footer-team">
+          <h4>Equipo de Desarrollo</h4>
+          <p>Integrantes: Andreu Luca, Cachi Vladimir, Cadena Benjamin, Garzon Juan, Rios Esteban</p>
+        </div>
         <p className="footer-copy">© {new Date().getFullYear()} PlayFields. Todos los derechos reservados.</p>
       </footer>
     </>
