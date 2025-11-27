@@ -1,0 +1,1 @@
+FATAL: unable to detect log file format from /var/lib/postgresql/data/log/postgresql.log, please use -f option.

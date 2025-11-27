@@ -429,6 +429,25 @@ a {
   color: #34d399;
 }
 
+.footer-team {
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 20px;
+  margin-top: 20px;
+}
+
+.footer-team h4 {
+  color: #e2e8f0;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.footer-team p {
+  color: #cbd5f5;
+  font-size: 14px;
+  margin: 0;
+}
+
 .footer-copy {
   text-align: center;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
