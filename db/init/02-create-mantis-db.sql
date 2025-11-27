@@ -1,0 +1,3 @@
+CREATE DATABASE mantisdb;
+CREATE USER mantisuser WITH ENCRYPTED PASSWORD 'mantispass';
+GRANT ALL PRIVILEGES ON DATABASE mantisdb TO mantisuser;

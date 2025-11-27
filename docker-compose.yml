@@ -18,7 +18,7 @@ services:
     depends_on:
       - db
     restart: unless-stopped
-  
+
   db:
     image: postgres:15
     container_name: hiafinal_db
@@ -80,32 +80,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./pgbadger_reports:/out
-    entrypoint: ["sh", "-c"]
-    command: >
-      # Loop continuo: esperar logs con contenido y procesarlos cada hora
-      while true; do
-        echo 'Esperando logs de Postgres con contenido...';
-        i=0;
-        # Espera hasta 300s por archivos con tamaño >0
-        while [ $(find /var/lib/postgresql/data/log -type f -size +0c 2>/dev/null | wc -l) -eq 0 ]; do
-          sleep 1; i=$((i+1));
-          if [ $i -gt 300 ]; then
-            echo 'No se encontraron logs con contenido tras 300s, continuará igualmente (no procesará)';
-            break;
-          fi;
-        done;
-
-        if [ $(find /var/lib/postgresql/data/log -type f -size +0c 2>/dev/null | wc -l) -gt 0 ]; then
-          echo 'Generando reporte pgBadger...';
-          pgbadger /var/lib/postgresql/data/log/*.log -o /out/report.html 2>/out/pgbadger.err || true;
-          echo 'Reporte generado (si había logs).';
-        else
-          echo 'No hay archivos con contenido para procesar en este ciclo.';
-        fi;
-
-        echo 'Durmiendo 3600s hasta el siguiente ciclo...';
-        sleep 3600;
-      done
+      - ./pgbadger/run.sh:/run.sh
+    entrypoint: ["/bin/sh", "/run.sh"]
     restart: unless-stopped
 
   prometheus:
@@ -118,7 +94,7 @@ services:
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
     restart: unless-stopped
-    
+
   grafana:
     image: grafana/grafana:latest
     container_name: hiafinal_grafana
@@ -130,7 +106,35 @@ services:
       - grafana_data:/var/lib/grafana
     restart: unless-stopped
 
+  mariadb_glpi:
+    image: mariadb:10.6
+    container_name: hiafinal_mariadb_glpi
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: glpidb
+      MYSQL_USER: glpi
+      MYSQL_PASSWORD: glpi
+    volumes:
+      - glpi_mariadb_data:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    restart: unless-stopped
+
+  glpi:
+    image: diouxx/glpi
+    container_name: hiafinal_glpi
+    ports:
+      - "8082:80"
+    environment:
+      - TZ=America/Argentina/Buenos_Aires
+    depends_on:
+      - mariadb_glpi
+    volumes:
+      - glpi_data:/var/www/html/glpi
+    restart: unless-stopped
+
 volumes:
   postgres_data:
-  postgres_logs:
   grafana_data:
+  glpi_mariadb_data:
+  glpi_data:
