@@ -187,3 +187,82 @@ Workflow usado
    Subir a main
    Verificar en GitHub → Actions que pase todo ✔
    CI/CD implementado correctamente
+
+## 12. 📊 Carga de Datos Masivos para Pruebas de Optimización
+
+### Descripción
+El proyecto incluye un script para generar e insertar 860,000+ registros de prueba (usuarios, canchas, reservaciones, calificaciones) para realizar pruebas de optimización, análisis de performance y ejercicios con pgBadger.
+
+### Contenidos
+- **db/init/03_generate_bulk_data.sql** — Script SQL que genera datos masivos
+- **db/load_bulk_data.sh** — Script bash para Linux/macOS
+- **db/load_bulk_data.ps1** — Script PowerShell para Windows
+
+### Cómo usar
+
+#### **Opción 1: Windows (PowerShell)**
+```powershell
+cd "d:\HIA FINAL"
+
+# Ejecutar el script
+.\db\load_bulk_data.ps1
+
+# Alternativamente, si prefieres usar docker compose directamente:
+docker compose exec -T db psql -U postgres -d hia -f /docker-entrypoint-initdb.d/03_generate_bulk_data.sql
+```
+
+#### **Opción 2: Linux / macOS (bash)**
+```bash
+cd ~/hia-final  # o donde tengas el proyecto
+
+# Dar permisos ejecutables (solo primera vez)
+chmod +x db/load_bulk_data.sh
+
+# Ejecutar el script
+./db/load_bulk_data.sh
+```
+
+#### **Opción 3: Comando directo (cualquier SO)**
+```bash
+docker compose exec -T db psql -U postgres -d hia -f /docker-entrypoint-initdb.d/03_generate_bulk_data.sql
+```
+
+### Estadísticas de Carga
+- **Usuarios**: ~500,000 (roles: player, owner, admin)
+- **Canchas**: ~500,000 (deportes variados)
+- **Reservaciones**: ~500,000
+- **Calificaciones**: ~500,000
+- **Total**: ~2,000,000 registros
+
+**Duración esperada**: 5-15 minutos (depende del hardware)
+
+### Funcionalidades del Script
+✔ Desactiva triggers temporalmente para inserción rápida  
+✔ Genera datos realistas (emails, fechas, precios aleatorios)  
+✔ Crea índices estratégicos para optimización  
+✔ Ejecuta ANALYZE para estadísticas actualizadas  
+✔ Maneja conflictos de clave única  
+
+### Análisis de Performance
+Una vez cargados los datos, puedes analizar performance con pgBadger:
+
+```bash
+# Reiniciar pgBadger para análisis
+docker compose restart pgbadger
+
+# Ver reporte en navegador
+# http://localhost/pgbadger_reports/report.html
+
+# O generar reporte manual
+docker compose exec pgbadger pgbadger -f postgres /var/lib/postgresql/data/log/postgresql.log -o /out/report.html
+```
+
+### Verificación
+```bash
+# Verificar cantidad de registros
+docker compose exec db psql -U postgres -d hia -c "SELECT 
+  (SELECT COUNT(*) FROM users) as usuarios,
+  (SELECT COUNT(*) FROM courts) as canchas,
+  (SELECT COUNT(*) FROM reservations) as reservaciones,
+  (SELECT COUNT(*) FROM ratings) as calificaciones;"
+```
