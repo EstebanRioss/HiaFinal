@@ -8,6 +8,104 @@ services:
     container_name: hiafinal_app
     ports:
       - "3000:3000"
+    environment:
+      DB_HOST: db
+      DB_USER: postgres
+      DB_PASS: postgres
+      DB_NAME: hia
+      DB_PORT: 5432
+      DATABASE_URL: "postgresql://postgres:postgres@db:5432/hia"
+    depends_on:
+      - db
+    restart: unless-stopped
+  
+  db:
+    image: postgres:15
+    container_name: hiafinal_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: hia
+    ports:
+      - "5432:5432"
+    command:
+      - "postgres"
+      - "-c"
+      - "logging_collector=on"
+      - "-c"
+      - "log_directory=log"
+      - "-c"
+      - "log_filename=postgresql.log"
+      - "-c"
+      - "log_statement=all"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: hiafinal_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db_backup:
+    image: postgres:15
+    container_name: hiafinal_backup
+    volumes:
+      - ./backups:/backups
+    environment:
+      PGPASSWORD: postgres
+    entrypoint: >
+      bash -c "while true; do
+        pg_dump -h db -U postgres hia > /backups/backup_$(date +%Y%m%d_%H%M%S).sql;
+        echo 'Backup generado';
+        sleep 86400;
+      done"
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  pgbadger:
+    image: dalibo/pgbadger
+    container_name: hiafinal_pgbadger
+    depends_on:
+      - db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./pgbadger_reports:/out
+    entrypoint: ["sh", "-c"]
+    command: >
+      # Loop continuo: esperar logs con contenido y procesarlos cada hora
+      while true; do
+        echo 'Esperando logs de Postgres con contenido...';
+        i=0;
+        # Espera hasta 300s por archivos con tamaño >0
+        while [ $(find /var/lib/postgresql/data/log -type f -size +0c 2>/dev/null | wc -l) -eq 0 ]; do
+          sleep 1; i=$((i+1));
+          if [ $i -gt 300 ]; then
+            echo 'No se encontraron logs con contenido tras 300s, continuará igualmente (no procesará)';
+            break;
+          fi;
+        done;
+
+        if [ $(find /var/lib/postgresql/data/log -type f -size +0c 2>/dev/null | wc -l) -gt 0 ]; then
+          echo 'Generando reporte pgBadger...';
+          pgbadger /var/lib/postgresql/data/log/*.log -o /out/report.html 2>/out/pgbadger.err || true;
+          echo 'Reporte generado (si había logs).';
+        else
+          echo 'No hay archivos con contenido para procesar en este ciclo.';
+        fi;
+
+        echo 'Durmiendo 3600s hasta el siguiente ciclo...';
+        sleep 3600;
+      done
     restart: unless-stopped
 
   prometheus:
@@ -33,4 +131,6 @@ services:
     restart: unless-stopped
 
 volumes:
+  postgres_data:
+  postgres_logs:
   grafana_data:
