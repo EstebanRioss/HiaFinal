@@ -1,53 +1,37 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { readCourtRequests, writeCourtRequests, initializeData } from '@/lib/db';
-import { requireRole } from '@/lib/api-helpers';
+import { NextRequest, NextResponse } from "next/server";
+import { pool } from "@/lib/pg";
+import { requireRole } from "@/lib/api-helpers";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    await initializeData();
-    const admin = requireRole(request, ['admin']);
+    const admin: any = requireRole(request as any, ["admin"] as any);
 
-    const requests = readCourtRequests();
-    const courtRequest = requests.find(r => r.id === params.id);
+    const { rows } = await pool.query(
+      "SELECT * FROM court_requests WHERE id=$1",
+      [params.id]
+    );
 
-    if (!courtRequest) {
+    if (!rows[0])
       return NextResponse.json(
-        { error: 'Solicitud no encontrada' },
+        { error: "Solicitud no encontrada" },
         { status: 404 }
       );
-    }
 
-    if (courtRequest.status !== 'pending') {
-      return NextResponse.json(
-        { error: 'Esta solicitud ya fue procesada' },
-        { status: 400 }
-      );
-    }
+    await pool.query(
+      `UPDATE court_requests 
+       SET status='rejected', reviewed_at=NOW(), reviewed_by=$1 
+       WHERE id=$2`,
+      [admin.id, params.id]
+    );
 
-    // Actualizar el estado de la solicitud
-    courtRequest.status = 'rejected';
-    courtRequest.reviewedAt = new Date().toISOString();
-    courtRequest.reviewedBy = admin.id;
-    writeCourtRequests(requests);
-
-    return NextResponse.json({
-      message: 'Solicitud rechazada',
-    });
-  } catch (error: any) {
-    if (error.message === 'No autenticado' || error.message === 'No autorizado') {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 401 }
-      );
-    }
+    return NextResponse.json({ message: "Solicitud rechazada" });
+  } catch {
     return NextResponse.json(
-      { error: 'Error al rechazar solicitud' },
+      { error: "Error al rechazar solicitud" },
       { status: 500 }
     );
   }
 }
-
-

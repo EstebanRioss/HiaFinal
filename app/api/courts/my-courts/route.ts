@@ -1,28 +1,33 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { readCourts, initializeData } from '@/lib/db';
-import { requireRole } from '@/lib/api-helpers';
+import { NextRequest, NextResponse } from "next/server";
+import { pool } from "@/lib/pg";
+import { requireRole } from "@/lib/api-helpers";
 
 export async function GET(request: NextRequest) {
   try {
-    await initializeData();
-    const user = requireRole(request, ['owner']);
+    const user: any = requireRole(request as any, ["owner"] as any);
 
-    const courts = readCourts();
-    const ownerCourts = courts.filter(c => c.ownerId === user.id);
+    const { rows } = await pool.query(
+      "SELECT * FROM courts WHERE owner_id = $1 ORDER BY created_at DESC",
+      [user.id]
+    );
 
-    return NextResponse.json({ courts: ownerCourts });
+    return NextResponse.json({
+      courts: rows.map((c: any) => ({
+        ...c,
+        price_per_hour: Number(c.price_per_hour),
+        average_rating: Number(c.average_rating),
+        total_ratings: Number(c.total_ratings),
+        availability: c.availability
+          ? typeof c.availability === 'string'
+            ? JSON.parse(c.availability)
+            : c.availability
+          : null,
+      })),
+    });
   } catch (error: any) {
-    if (error.message === 'No autenticado' || error.message === 'No autorizado') {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 401 }
-      );
-    }
     return NextResponse.json(
-      { error: 'Error al obtener canchas' },
+      { error: error.message ?? "Error al obtener canchas" },
       { status: 500 }
     );
   }
 }
-
-

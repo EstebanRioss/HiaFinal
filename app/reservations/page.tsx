@@ -90,11 +90,11 @@ export default function ReservationsPage() {
               <div key={reservation.id} className="court-card">
                 <h3>{reservation.court.name}</h3>
                 <p><strong>Fecha:</strong> {new Date(reservation.date).toLocaleDateString('es-ES')}</p>
-                <p><strong>Horario:</strong> {reservation.startTime} - {reservation.endTime}</p>
-                <p><strong>Total:</strong> ${reservation.totalPrice}</p>
-                <p><strong>Método de pago:</strong> {reservation.paymentMethod}</p>
-                {reservation.paymentMethod === 'transferencia' && reservation.transferTiming && (
-                  <p><strong>Transferencia:</strong> {reservation.transferTiming === 'inmediato' ? 'En el momento' : 'Antes de entrar'}</p>
+                <p><strong>Horario:</strong> {reservation.start_time} - {reservation.end_time}</p>
+                <p><strong>Total:</strong> ${reservation.total_price}</p>
+                <p><strong>Método de pago:</strong> {reservation.payment_method}</p>
+                {reservation.payment_method === 'transferencia' && reservation.transfer_timing && (
+                  <p><strong>Transferencia:</strong> {reservation.transfer_timing === 'inmediato' ? 'En el momento' : 'Antes de entrar'}</p>
                 )}
                 <p><strong>Estado:</strong> {
                   reservation.status === 'pending' ? 'Pendiente' :
@@ -103,7 +103,7 @@ export default function ReservationsPage() {
                 }</p>
                 {reservation.status === 'completed' && (
                   <button
-                    onClick={() => handleRate(reservation.id, reservation.courtId)}
+                    onClick={() => handleRate(reservation.id, reservation.court_id)}
                     className="btn btn-success"
                     style={{ width: '100%', marginTop: '10px' }}
                   >

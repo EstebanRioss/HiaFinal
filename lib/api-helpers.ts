@@ -1,27 +1,57 @@
-import { NextRequest } from 'next/server';
-import { verifyToken } from './auth';
-import { UserRole } from '@/types';
+// lib/api-helpers.ts
+import { NextRequest, NextResponse } from "next/server";
+import { verifyToken } from "./auth";
+import { query } from "./pg";
 
-export function getAuthUser(request: NextRequest): { id: string; email: string; role: UserRole } | null {
-  const token = request.cookies.get('token')?.value;
+/**
+ * Obtiene el usuario autenticado desde el token.
+ * Devuelve `null` si el token no es válido o el usuario no existe.
+ */
+export async function getAuthUser(req: NextRequest) {
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader) return null;
+
+  const token = authHeader.split(" ")[1];
   if (!token) return null;
-  return verifyToken(token);
+
+  const payload = verifyToken(token);
+  if (!payload) return null;
+
+  // Buscar usuario en DB usando payload.id
+  const result = await query("SELECT id, name, email, role FROM users WHERE id = $1", [
+    payload.id,
+  ]);
+
+  if (result.rowCount === 0) return null;
+
+  return result.rows[0];
 }
 
-export function requireAuth(request: NextRequest): { id: string; email: string; role: UserRole } {
-  const user = getAuthUser(request);
+/**
+ * Middleware para proteger rutas privadas.
+ * Devuelve el usuario autenticado o una respuesta 401.
+ */
+export async function requireAuth(req: NextRequest) {
+  const user = await getAuthUser(req);
   if (!user) {
-    throw new Error('No autenticado');
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   return user;
 }
 
-export function requireRole(request: NextRequest, allowedRoles: UserRole[]): { id: string; email: string; role: UserRole } {
-  const user = requireAuth(request);
-  if (!allowedRoles.includes(user.role)) {
-    throw new Error('No autorizado');
+/**
+ * Middleware para rutas que requieren rol específico.
+ */
+export async function requireRole(req: NextRequest, role: string) {
+  const user = await getAuthUser(req);
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  if (user.role !== role) {
+    return NextResponse.json({ error: "Forbidden: insufficient permissions" }, { status: 403 });
+  }
+
   return user;
 }
-
-

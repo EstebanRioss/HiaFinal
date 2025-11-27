@@ -1,28 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { readCourts, initializeData } from '@/lib/db';
+import { NextRequest, NextResponse } from "next/server";
+import { query } from "@/lib/pg";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    await initializeData();
-    const courts = readCourts();
-    const court = courts.find(c => c.id === params.id);
+export async function GET(req: NextRequest, { params }: any) {
+  const { id } = params;
 
-    if (!court) {
-      return NextResponse.json(
-        { error: 'Cancha no encontrada' },
-        { status: 404 }
-      );
-    }
+  const { rows } = await query("SELECT * FROM courts WHERE id = $1", [id]);
+  if (!rows.length) return NextResponse.json({ error: "Court not found" }, { status: 404 });
 
-    return NextResponse.json({ court });
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Error al obtener cancha' },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json(rows[0]);
 }
-

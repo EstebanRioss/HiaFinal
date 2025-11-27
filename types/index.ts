@@ -1,20 +1,24 @@
-export type UserRole = 'admin' | 'owner' | 'player';
-
 export interface User {
   id: string;
   email: string;
   password: string;
   name: string;
-  role: UserRole;
-  createdAt: string;
+  role: string;
+  created_at: string;
 }
 
-export type Sport = 'futbol' | 'basquet' | 'tenis' | 'padel' | 'voley';
-export type DayOfWeek = 'lunes' | 'martes' | 'miercoles' | 'jueves' | 'viernes' | 'sabado' | 'domingo';
+export type DayOfWeek =
+  | 'domingo'
+  | 'lunes'
+  | 'martes'
+  | 'miercoles'
+  | 'jueves'
+  | 'viernes'
+  | 'sabado';
 
 export interface TimeRange {
-  startTime: string; // formato HH:mm
-  endTime: string;   // formato HH:mm
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
 }
 
 export interface CourtAvailability {
@@ -23,59 +27,66 @@ export interface CourtAvailability {
 }
 
 export type PaymentMethod = 'transferencia' | 'tarjeta' | 'efectivo';
+
 export type TransferTiming = 'inmediato' | 'antes_entrada';
 
 export interface Court {
   id: string;
   name: string;
-  sport: Sport;
+  sport: string;
   location: string;
-  pricePerHour: number;
-  ownerId: string;
+  price_per_hour: number;
+  owner_id: string;
   description: string;
-  image?: string;
-  averageRating: number;
-  totalRatings: number;
-  createdAt: string;
+  average_rating: number;
+  total_ratings: number;
+  created_at: string;
   availability: CourtAvailability[];
 }
 
 export interface Reservation {
   id: string;
-  courtId: string;
-  userId: string;
+  court_id: string;
+  user_id: string;
   date: string;
-  startTime: string;
-  endTime: string;
-  totalPrice: number;
-  paymentMethod: PaymentMethod;
-  transferTiming?: TransferTiming;
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
-  createdAt: string;
+  start_time: string;
+  end_time: string;
+  total_price: number;
+  payment_method: string;
+  transfer_timing: string;
+  status: string;
+  created_at: string;
 }
 
 export interface Rating {
   id: string;
-  courtId: string;
-  userId: string;
-  reservationId: string;
-  rating: number; // 1-5
-  comment?: string;
-  createdAt: string;
+  court_id: string;
+  user_id: string;
+  reservation_id: string;
+  rating: number;
+  comment: string;
+  created_at: string;
 }
+
+export type Sport =
+  | "futbol"
+  | "tenis"
+  | "padel"
+  | "voley"
+  | "basquet"
+  | string;
 
 export interface CourtRequest {
   id: string;
-  ownerId: string;
+  owner_id: string;
   name: string;
   sport: Sport;
   location: string;
-  pricePerHour: number;
+  price_per_hour: number;
   description: string;
-  availability: CourtAvailability[];
-  status: 'pending' | 'approved' | 'rejected';
-  createdAt: string;
-  reviewedAt?: string;
-  reviewedBy?: string;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+  reviewed_at?: string | null;
+  reviewed_by?: string | null;
+  availability: CourtAvailability[]; // Tipado estrictamente para disponibilidad
 }
-

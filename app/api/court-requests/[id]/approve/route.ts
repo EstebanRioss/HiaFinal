@@ -1,75 +1,77 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { readCourtRequests, writeCourtRequests, readCourts, writeCourts, initializeData } from '@/lib/db';
-import { requireRole } from '@/lib/api-helpers';
-import { Court } from '@/types';
-import { v4 as uuidv4 } from 'uuid';
+import { NextRequest, NextResponse } from "next/server";
+import { pool } from "@/lib/pg";
+import { requireRole } from "@/lib/api-helpers";
+import { v4 as uuid } from "uuid";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    await initializeData();
-    const admin = requireRole(request, ['admin']);
+    const admin: any = requireRole(request, ["admin"] as any);
 
-    const requests = readCourtRequests();
-    const courtRequest = requests.find(r => r.id === params.id);
+    const { rows } = await pool.query(
+      "SELECT * FROM court_requests WHERE id=$1 LIMIT 1",
+      [params.id]
+    );
 
-    if (!courtRequest) {
+    const req = rows[0];
+
+    if (!req)
       return NextResponse.json(
-        { error: 'Solicitud no encontrada' },
+        { error: "Solicitud no encontrada" },
         { status: 404 }
       );
-    }
 
-    if (courtRequest.status !== 'pending') {
+    if (req.status !== "pending")
       return NextResponse.json(
-        { error: 'Esta solicitud ya fue procesada' },
+        { error: "La solicitud ya fue procesada" },
         { status: 400 }
       );
-    }
 
-    // Crear la cancha
-    const courts = readCourts();
-    const newCourt: Court = {
-      id: uuidv4(),
-      name: courtRequest.name,
-      sport: courtRequest.sport,
-      location: courtRequest.location,
-      pricePerHour: courtRequest.pricePerHour,
-      ownerId: courtRequest.ownerId,
-      description: courtRequest.description,
-      averageRating: 0,
-      totalRatings: 0,
-      createdAt: new Date().toISOString(),
-      availability: courtRequest.availability,
-    };
+    const courtId = uuid();
 
-    courts.push(newCourt);
-    writeCourts(courts);
+    const availability = req.availability
+      ? typeof req.availability === 'string'
+        ? JSON.parse(req.availability)
+        : req.availability
+      : null;
 
-    // Actualizar el estado de la solicitud
-    courtRequest.status = 'approved';
-    courtRequest.reviewedAt = new Date().toISOString();
-    courtRequest.reviewedBy = admin.id;
-    writeCourtRequests(requests);
+    await pool.query(
+      `
+      INSERT INTO courts
+      (id,name,sport,location,price_per_hour,owner_id,description,average_rating,total_ratings,created_at,availability)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,0,0,NOW(),$8)
+    `,
+      [
+        courtId,
+        req.name,
+        req.sport,
+        req.location,
+        Number(req.price_per_hour),
+        req.owner_id,
+        req.description,
+        availability,
+      ]
+    );
+
+    await pool.query(
+      `
+      UPDATE court_requests
+      SET status='approved', reviewed_at=NOW(), reviewed_by=$1
+      WHERE id=$2
+      `,
+      [admin.id, params.id]
+    );
 
     return NextResponse.json({
-      message: 'Solicitud aprobada y cancha creada exitosamente',
-      court: newCourt,
+      message: "Solicitud aprobada",
+      courtId,
     });
-  } catch (error: any) {
-    if (error.message === 'No autenticado' || error.message === 'No autorizado') {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 401 }
-      );
-    }
+  } catch {
     return NextResponse.json(
-      { error: 'Error al aprobar solicitud' },
+      { error: "Error al aprobar solicitud" },
       { status: 500 }
     );
   }
 }
-
-

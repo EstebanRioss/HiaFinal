@@ -90,7 +90,7 @@ export default function ReservePage() {
 
   const calculateTotal = () => {
     if (!court) return 0;
-    return court.pricePerHour;
+    return court.price_per_hour;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -178,7 +178,7 @@ export default function ReservePage() {
           <h1>Reservar Cancha: {court.name}</h1>
           <p><strong>Deporte:</strong> {court.sport}</p>
           <p><strong>Ubicación:</strong> {court.location}</p>
-          <p><strong>Precio por hora:</strong> ${court.pricePerHour}</p>
+          <p><strong>Precio por hora:</strong> ${court.price_per_hour}</p>
 
           {success && (
             <div className="alert alert-success">

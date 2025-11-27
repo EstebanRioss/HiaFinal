@@ -379,9 +379,9 @@ export default function OwnerPage() {
                   <h3>{court.name}</h3>
                   <p><strong>Deporte:</strong> {court.sport}</p>
                   <p><strong>Ubicación:</strong> {court.location}</p>
-                  <p><strong>Precio:</strong> ${court.pricePerHour}/hora</p>
-                <p><strong>Puntuación promedio:</strong> {court.averageRating.toFixed(1)}/5.0</p>
-                <p><strong>Total de calificaciones:</strong> {court.totalRatings}</p>
+                  <p><strong>Precio:</strong> ${court.price_per_hour}/hora</p>
+                <p><strong>Puntuación promedio:</strong> {court.average_rating.toFixed(1)}/5.0</p>
+                <p><strong>Total de calificaciones:</strong> {court.total_ratings}</p>
                 <p><strong>Disponibilidad:</strong></p>
                 <ul style={{ paddingLeft: '18px', color: '#475569' }}>
                   {court.availability.map((day) => (
@@ -406,7 +406,7 @@ export default function OwnerPage() {
                   <h3>{request.name}</h3>
                   <p><strong>Deporte:</strong> {request.sport}</p>
                   <p><strong>Ubicación:</strong> {request.location}</p>
-                  <p><strong>Precio:</strong> ${request.pricePerHour}/hora</p>
+                  <p><strong>Precio:</strong> ${request.price_per_hour}/hora</p>
                   <p><strong>Descripción:</strong> {request.description}</p>
                 <p><strong>Disponibilidad solicitada:</strong></p>
                 <ul style={{ paddingLeft: '18px', color: '#475569' }}>
@@ -418,9 +418,9 @@ export default function OwnerPage() {
                   ))}
                 </ul>
                   <p><strong>Estado:</strong> {getStatusBadge(request.status)}</p>
-                  {request.reviewedAt && (
+                  {request.reviewed_at && (
                     <p style={{ fontSize: '12px', color: '#666' }}>
-                      Revisada el {new Date(request.reviewedAt).toLocaleDateString('es-ES')}
+                      Revisada el {new Date(request.reviewed_at).toLocaleDateString('es-ES')}
                     </p>
                   )}
                 </div>
