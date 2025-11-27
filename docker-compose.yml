@@ -81,7 +81,8 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./pgbadger_reports:/out
       - ./pgbadger/run.sh:/run.sh
-    entrypoint: ["/bin/sh", "/run.sh"]
+    # Normalize CRLF from host script at container startup and run the cleaned copy
+    entrypoint: ["/bin/sh", "-c", "tr -d '\\r' < /run.sh > /tmp/run.sh && /bin/sh /tmp/run.sh"]
     restart: unless-stopped
 
   prometheus:
