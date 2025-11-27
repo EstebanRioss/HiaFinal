@@ -299,14 +299,14 @@ export default function AdminPage() {
           ) : (
             <div className="grid">
               {requests.map((request) => {
-                const owner = owners.find(o => o.id === request.ownerId);
+                const owner = owners.find(o => o.id === request.owner_id);
                 return (
                   <div key={request.id} className="court-card">
                     <h3>{request.name}</h3>
                     <p><strong>Dueño:</strong> {owner ? `${owner.name} (${owner.email})` : 'N/A'}</p>
                     <p><strong>Deporte:</strong> {request.sport}</p>
                     <p><strong>Ubicación:</strong> {request.location}</p>
-                    <p><strong>Precio:</strong> ${request.pricePerHour}/hora</p>
+                    <p><strong>Precio:</strong> ${request.price_per_hour}/hora</p>
                     <p><strong>Descripción:</strong> {request.description}</p>
                 <p><strong>Disponibilidad propuesta:</strong></p>
                 <ul style={{ paddingLeft: '18px', color: '#475569' }}>
@@ -344,9 +344,9 @@ export default function AdminPage() {
                         </button>
                       </div>
                     )}
-                    {request.reviewedAt && (
+                    {request.reviewed_at && (
                       <p style={{ fontSize: '12px', color: '#666', marginTop: '10px' }}>
-                        Revisada el {new Date(request.reviewedAt).toLocaleDateString('es-ES')}
+                        Revisada el {new Date(request.reviewed_at).toLocaleDateString('es-ES')}
                       </p>
                     )}
                   </div>
@@ -364,8 +364,8 @@ export default function AdminPage() {
                 <h3>{court.name}</h3>
                 <p><strong>Deporte:</strong> {court.sport}</p>
                 <p><strong>Ubicación:</strong> {court.location}</p>
-                <p><strong>Precio:</strong> ${court.pricePerHour}/hora</p>
-                <p><strong>Puntuación:</strong> {court.averageRating.toFixed(1)}/5.0</p>
+                <p><strong>Precio:</strong> ${court.price_per_hour}/hora</p>
+                <p><strong>Puntuación:</strong> {court.average_rating.toFixed(1)}/5.0</p>
                 <p><strong>Disponibilidad:</strong></p>
                 <ul style={{ paddingLeft: '18px', color: '#475569' }}>
                   {court.availability.map((day) => (

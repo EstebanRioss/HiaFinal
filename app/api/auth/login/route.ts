@@ -1,55 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { readUsers, initializeData } from '@/lib/db';
-import { verifyPassword, generateToken, getUserByEmail } from '@/lib/auth';
+import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import { query } from "@/lib/pg";
+import { generateToken } from "@/lib/auth";
 
-export async function POST(request: NextRequest) {
-  try {
-    await initializeData();
-    const { email, password } = await request.json();
+export async function POST(req: NextRequest) {
+  const { email, password } = await req.json();
 
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email y contraseña son requeridos' },
-        { status: 400 }
-      );
-    }
+  const { rows } = await query("SELECT * FROM users WHERE email = $1 LIMIT 1", [email]);
+  if (!rows.length) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
 
-    const user = getUserByEmail(email);
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Credenciales inválidas' },
-        { status: 401 }
-      );
-    }
+  const user = rows[0];
+  const valid = await bcrypt.compare(password, user.password);
+  if (!valid) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
 
-    const isValid = await verifyPassword(password, user.password);
-    if (!isValid) {
-      return NextResponse.json(
-        { error: 'Credenciales inválidas' },
-        { status: 401 }
-      );
-    }
+  const token = generateToken(user);
 
-    const token = generateToken(user);
-
-    const response = NextResponse.json({
-      message: 'Login exitoso',
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
-    });
-
-    response.cookies.set('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 días
-    });
-
-    return response;
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Error al iniciar sesión' },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json({ token });
 }
-

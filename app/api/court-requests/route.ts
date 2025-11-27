@@ -1,103 +1,98 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { readCourtRequests, writeCourtRequests, readCourts, initializeData } from '@/lib/db';
-import { requireAuth, requireRole } from '@/lib/api-helpers';
-import { CourtRequest, Court, CourtAvailability } from '@/types';
-import { v4 as uuidv4 } from 'uuid';
-import { validateAvailability } from '@/lib/availability';
+import { NextRequest, NextResponse } from "next/server";
+import { pool } from "@/lib/pg";
+import { requireAuth, requireRole } from "@/lib/api-helpers";
+import { v4 as uuid } from "uuid";
 
-// Obtener solicitudes (admin ve todas, dueño ve solo las suyas)
 export async function GET(request: NextRequest) {
   try {
-    await initializeData();
-    const user = requireAuth(request);
-    const requests = readCourtRequests();
+    const user: any = requireAuth(request as any);
 
-    if (user.role === 'admin') {
-      return NextResponse.json({ requests });
-    } else {
-      const ownerRequests = requests.filter(r => r.ownerId === user.id);
-      return NextResponse.json({ requests: ownerRequests });
+    if (user.role === "admin") {
+      const { rows } = await pool.query("SELECT * FROM court_requests");
+      return NextResponse.json({
+        requests: rows.map((r: any) => ({
+          ...r,
+          price_per_hour: Number(r.price_per_hour),
+          availability: r.availability
+            ? typeof r.availability === 'string'
+              ? JSON.parse(r.availability)
+              : r.availability
+            : null,
+        })),
+      });
     }
-  } catch (error: any) {
-    if (error.message === 'No autenticado') {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 401 }
-      );
-    }
+
+    const { rows } = await pool.query(
+      "SELECT * FROM court_requests WHERE owner_id=$1",
+      [user.id]
+    );
+
+    return NextResponse.json({
+      requests: rows.map((r: any) => ({
+        ...r,
+        price_per_hour: Number(r.price_per_hour),
+        availability: r.availability
+          ? typeof r.availability === 'string'
+            ? JSON.parse(r.availability)
+            : r.availability
+          : null,
+      })),
+    });
+  } catch {
     return NextResponse.json(
-      { error: 'Error al obtener solicitudes' },
+      { error: "Error al obtener solicitudes" },
       { status: 500 }
     );
   }
 }
 
-// Crear solicitud (solo dueños)
 export async function POST(request: NextRequest) {
   try {
-    await initializeData();
-    const user = requireRole(request, ['owner']);
+    const user: any = requireRole(request as any, ["owner"] as any);
 
-    const { name, sport, location, pricePerHour, description, availability } = await request.json();
-
-    if (!name || !sport || !location || !pricePerHour || !description || !availability) {
-      return NextResponse.json(
-        { error: 'Todos los campos son requeridos' },
-        { status: 400 }
-      );
-    }
-
-    if (!validateAvailability(availability as CourtAvailability[])) {
-      return NextResponse.json(
-        { error: 'Debes enviar una disponibilidad válida.' },
-        { status: 400 }
-      );
-    }
-
-    // Verificar que el dueño ya tenga al menos una cancha
-    const courts = readCourts();
-    const ownerCourts = courts.filter(c => c.ownerId === user.id);
-
-    if (ownerCourts.length < 1) {
-      return NextResponse.json(
-        { error: 'Primero debes agregar tu primera cancha directamente desde el panel de dueño.' },
-        { status: 400 }
-      );
-    }
-
-    const requests = readCourtRequests();
-    const newRequest: CourtRequest = {
-      id: uuidv4(),
-      ownerId: user.id,
+    const {
       name,
       sport,
       location,
-      pricePerHour: Number(pricePerHour),
+      pricePerHour,
       description,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
       availability,
-    };
+    } = await request.json();
 
-    requests.push(newRequest);
-    writeCourtRequests(requests);
+    if (!name || !sport || !location || !pricePerHour || !description)
+      return NextResponse.json(
+        { error: "Campos requeridos" },
+        { status: 400 }
+      );
+
+    const id = uuid();
+
+    await pool.query(
+      `
+      INSERT INTO court_requests
+      (id,owner_id,name,sport,location,price_per_hour,description,status,created_at,availability)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,'pending',NOW(),$8)
+    `,
+      [
+        id,
+        user.id,
+        name,
+        sport,
+        location,
+        Number(pricePerHour),
+        description,
+        JSON.stringify(availability),
+      ]
+    );
 
     return NextResponse.json({
-      message: 'Solicitud enviada exitosamente. El administrador la revisará pronto.',
-      request: newRequest,
+      message: "Solicitud enviada",
+      request: { id },
     });
-  } catch (error: any) {
-    if (error.message === 'No autenticado' || error.message === 'No autorizado') {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 401 }
-      );
-    }
+  } catch {
     return NextResponse.json(
-      { error: 'Error al crear solicitud' },
+      { error: "Error al crear solicitud" },
       { status: 500 }
     );
   }
 }
-
-

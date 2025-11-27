@@ -1,35 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { readUsers, initializeData } from '@/lib/db';
-import { requireRole } from '@/lib/api-helpers';
+import { NextRequest, NextResponse } from "next/server";
+import { query } from "@/lib/pg";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    await initializeData();
-    requireRole(request, ['admin']);
-
-    const { searchParams } = new URL(request.url);
-    const role = searchParams.get('role');
-
-    let users = readUsers();
-    if (role) {
-      users = users.filter(u => u.role === role);
-    }
-
-    // No devolver las contraseñas
-    const safeUsers = users.map(({ password, ...user }) => user);
-
-    return NextResponse.json({ users: safeUsers });
-  } catch (error: any) {
-    if (error.message === 'No autenticado' || error.message === 'No autorizado') {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 401 }
-      );
-    }
-    return NextResponse.json(
-      { error: 'Error al obtener usuarios' },
-      { status: 500 }
-    );
+    const { rows } = await query("SELECT id, email, name, role, created_at FROM users ORDER BY created_at DESC");
+    return NextResponse.json(rows);
+  } catch (err: any) {
+    console.error('Error fetching users:', err.message ?? err);
+    return NextResponse.json({ error: 'Error fetching users' }, { status: 500 });
   }
 }
-

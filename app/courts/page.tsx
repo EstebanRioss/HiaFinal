@@ -42,11 +42,11 @@ export default function CourtsPage() {
 
     // Filtro por puntuación
     if (ratingFilter === 'high') {
-      filtered = filtered.sort((a, b) => b.averageRating - a.averageRating);
+      filtered = filtered.sort((a, b) => b.average_rating - a.average_rating);
     } else if (ratingFilter === 'low') {
-      filtered = filtered.sort((a, b) => a.averageRating - b.averageRating);
+      filtered = filtered.sort((a, b) => a.average_rating - b.average_rating);
     } else {
-      filtered = filtered.sort((a, b) => b.averageRating - a.averageRating);
+      filtered = filtered.sort((a, b) => b.average_rating - a.average_rating);
     }
 
     setFilteredCourts(filtered);
@@ -128,8 +128,8 @@ export default function CourtsPage() {
                 <h3>{court.name}</h3>
                 <p><strong>Deporte:</strong> {court.sport}</p>
                 <p><strong>Ubicación:</strong> {court.location}</p>
-                <p><strong>Precio:</strong> ${court.pricePerHour}/hora</p>
-                {renderStars(court.averageRating)}
+                <p><strong>Precio:</strong> ${court.price_per_hour}/hora</p>
+                {renderStars(court.average_rating)}
                 <p style={{ fontSize: '14px', color: '#666' }}>{court.description}</p>
                 <Link
                   href={`/courts/${court.id}/reserve`}
