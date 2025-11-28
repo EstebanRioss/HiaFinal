@@ -25,17 +25,21 @@ jobs:
       - name: Verificar que el build de Next compila
         run: npm run build
 
-      - name: Build de la imagen Docker
-        run: docker build -t hiafinal:latest .
+      - name: Build de servicios con Docker Compose
+        run: docker-compose build
 
-      - name: Probar que el contenedor arranca
+      - name: Iniciar servicios con Docker Compose
+        run: docker-compose up -d
+
+      - name: Verificar que la app está disponible
         run: |
-          docker run -d -p 3000:3000 --name hiafinal hiafinal:latest
-          sleep 15
-          curl -f http://localhost:3000 || (docker logs hiafinal && exit 1)
+          sleep 20
+          curl -f http://localhost:3000 || (docker-compose logs app && exit 1)
 
-      - name: Parar y eliminar contenedor de prueba
+      - name: Ver logs de servicios
         if: always()
-        run: |
-          docker stop hiafinal || true
-          docker rm hiafinal || true
+        run: docker-compose logs
+
+      - name: Parar y eliminar servicios
+        if: always()
+        run: docker-compose down -v
