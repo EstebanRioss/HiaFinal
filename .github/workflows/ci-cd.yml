@@ -13,6 +13,12 @@ jobs:
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
+        
+      - name: Instalar Docker Compose plugin
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose-plugin
+          docker compose version
 
       - name: Configurar Node 18
         uses: actions/setup-node@v4
@@ -22,24 +28,64 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
-      - name: Verificar que el build de Next compila
-        run: npm run build
+      - name: Crear directorios necesarios
+        run: |
+          mkdir -p ./db/init
+          mkdir -p ./backups
+          mkdir -p ./pgbadger_reports
+          mkdir -p ./monitoring
+
+      - name: Crear archivo de configuración de Prometheus
+        run: |
+          cat > ./monitoring/prometheus.yml << 'EOF'
+          global:
+            scrape_interval: 15s
+          scrape_configs:
+            - job_name: 'prometheus'
+              static_configs:
+                - targets: ['localhost:9090']
+          EOF
 
       - name: Build de servicios con Docker Compose
-        run: docker-compose build
+        run: docker compose build
 
       - name: Iniciar servicios con Docker Compose
-        run: docker-compose up -d
+        run: docker compose up -d
 
-      - name: Verificar que la app está disponible
+      - name: Esperar a que la base de datos esté lista
         run: |
-          sleep 20
-          curl -f http://localhost:3000 || (docker-compose logs app && exit 1)
+          echo "Esperando Postgres..."
+          for i in {1..20}; do
+            if docker compose exec -T db pg_isready -U postgres > /dev/null 2>&1; then
+              echo "✓ Postgres listo"
+              break
+            fi
+            echo "Intento $i: esperando..."
+            sleep 2
+          done
+
+      # Ahora que los servicios están arriba, recién hacemos el build de Next
+      - name: Build de la aplicación Next.js
+        run: npm run build
+
+      - name: Esperar a que la app levante
+        run: |
+          for i in {1..30}; do
+            if curl -f http://localhost:3000 > /dev/null 2>&1; then
+              echo "✓ App disponible"
+              exit 0
+            fi
+            echo "Esperando app... intento $i"
+            sleep 2
+          done
+          echo "✗ La app no levantó"
+          docker compose logs app
+          exit 1
 
       - name: Ver logs de servicios
         if: always()
-        run: docker-compose logs
+        run: docker compose logs
 
       - name: Parar y eliminar servicios
         if: always()
-        run: docker-compose down -v
+        run: docker compose down -v
