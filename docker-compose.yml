@@ -9,15 +9,15 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DB_HOST: pg_haproxy
+      DB_HOST: db_primary
       DB_USER: postgres
       DB_PASS: postgres
       DB_NAME: hia
       DB_PORT: 5432
-      DATABASE_URL: "postgresql://postgres:postgres@pg_haproxy:5432/hia"
+      DATABASE_URL: "postgresql://postgres:postgres@db_primary:5432/hia"
     depends_on:
       - db_primary
-      - pg_haproxy
+      - db_replica
     restart: unless-stopped
 
   db_primary:
@@ -65,50 +65,13 @@ services:
       REPL_PASSWORD: replica_pass
     volumes:
       - postgres_replica_data:/var/lib/postgresql/data
+      - ./db/replica:/docker-entrypoint-replica.d:ro
     depends_on:
       - db_primary
-      - replica_init
+    entrypoint: ["/docker-entrypoint-replica.d/replica-entrypoint.sh"]
     restart: unless-stopped
 
-  pg_haproxy:
-    image: haproxy:2.8
-    container_name: hiafinal_pg_haproxy
-    depends_on:
-      - db_primary
-      - db_replica
-    volumes:
-      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
-    restart: unless-stopped
-
-  failover:
-    image: postgres:15
-    container_name: hiafinal_failover
-    environment:
-      PGPASSWORD: postgres
-    depends_on:
-      - db_primary
-      - db_replica
-      - pg_haproxy
-    volumes:
-      - ./db/replication/failover_daemon.sh:/scripts/failover_daemon.sh:ro
-    entrypoint: ["bash","/scripts/failover_daemon.sh"]
-    restart: unless-stopped
-
-  replica_init:
-    image: postgres:15
-    container_name: hiafinal_replica_init
-    environment:
-      PRIMARY_HOST: db_primary
-      PRIMARY_PORT: 5432
-      REPL_USER: replicator
-      REPL_PASSWORD: replica_pass
-    depends_on:
-      - db_primary
-    volumes:
-      - postgres_replica_data:/var/lib/postgresql/data
-      - ./db/replication/replica_init.sh:/scripts/replica_init.sh:ro
-    entrypoint: ["bash","/scripts/replica_init.sh"]
-    restart: 'no'
+  # (No additional cluster services; simple primary + replica streaming replication)
 
   pgadmin:
     image: dpage/pgadmin4

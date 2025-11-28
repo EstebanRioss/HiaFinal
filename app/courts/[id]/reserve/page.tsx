@@ -54,7 +54,7 @@ export default function ReservePage() {
 
   const fetchCurrentUser = async () => {
     try {
-      const res = await fetch('/api/auth/me');
+      const res = await fetch('/api/auth/me', { credentials: 'include' });
       const data = await res.json();
       if (data.user) {
         setUserRole(data.user.role);
@@ -90,7 +90,7 @@ export default function ReservePage() {
 
   const calculateTotal = () => {
     if (!court) return 0;
-    return court.price_per_hour;
+    return typeof court.price_per_hour === 'number' && !isNaN(court.price_per_hour) ? court.price_per_hour : Number(court.price_per_hour) || 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -115,6 +115,7 @@ export default function ReservePage() {
           paymentMethod: formData.paymentMethod,
           transferTiming: formData.paymentMethod === 'transferencia' ? formData.transferTiming : undefined,
         }),
+        credentials: 'include',
       });
 
       const data = await res.json();

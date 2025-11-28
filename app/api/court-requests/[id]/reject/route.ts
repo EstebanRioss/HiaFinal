@@ -7,7 +7,9 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const admin: any = requireRole(request as any, ["admin"] as any);
+    const adminResult: any = await requireRole(request as any, ["admin"] as any);
+    if (!adminResult || (adminResult as any).id === undefined) return adminResult;
+    const admin: any = adminResult;
 
     const { rows } = await pool.query(
       "SELECT * FROM court_requests WHERE id=$1",

@@ -22,7 +22,23 @@ export function verifyToken(token: string): any {
 }
 
 export async function requireAuth(req: NextRequest) {
-  const token = req.headers.get("authorization")?.replace("Bearer ", "").trim();
+  // Accept token from Authorization header or cookie named 'token'
+  const headerToken = req.headers.get("authorization")?.replace("Bearer ", "").trim();
+  let cookieToken: string | undefined = undefined;
+  try {
+    // Prefer documented API if available
+    if ((req as any).cookies && typeof (req as any).cookies.get === 'function') {
+      const c = (req as any).cookies.get('token');
+      if (c) cookieToken = c.value ?? c;
+    } else {
+      const c = (req as any).cookies?.get?.('token');
+      if (c) cookieToken = c.value ?? c;
+    }
+  } catch {
+    /* ignore */
+  }
+
+  const token = headerToken || cookieToken;
 
   if (!token) {
     return { user: null, error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
@@ -42,11 +58,15 @@ export async function requireAuth(req: NextRequest) {
   }
 }
 
-export async function requireRole(req: NextRequest, role: string) {
+export async function requireRole(req: NextRequest, role?: string | string[]) {
   const { user, error } = await requireAuth(req);
   if (error) return { user: null, error };
 
-  if (user!.role !== role) {
+  // If no role specified, just return the authenticated user
+  if (!role) return { user, error: null };
+
+  const roles = Array.isArray(role) ? role : [role];
+  if (!roles.includes(user!.role)) {
     return { user: null, error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
   }
 

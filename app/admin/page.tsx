@@ -44,7 +44,18 @@ export default function AdminPage() {
     try {
       const res = await fetch('/api/courts');
       const data = await res.json();
-      setCourts(data.courts || []);
+      const normalized = (data.courts || []).map((c: any) => ({
+        ...c,
+        average_rating: typeof c.average_rating === 'number' ? c.average_rating : Number(c.average_rating) || 0,
+        price_per_hour: typeof c.price_per_hour === 'number' ? c.price_per_hour : Number(c.price_per_hour) || 0,
+        total_ratings: typeof c.total_ratings === 'number' ? c.total_ratings : Number(c.total_ratings) || 0,
+        availability: c.availability
+          ? typeof c.availability === 'string'
+            ? JSON.parse(c.availability)
+            : c.availability
+          : [],
+      }));
+      setCourts(normalized);
     } catch (error) {
       console.error('Error fetching courts:', error);
     }
@@ -52,7 +63,7 @@ export default function AdminPage() {
 
   const fetchOwners = async () => {
     try {
-      const res = await fetch('/api/users?role=owner');
+      const res = await fetch('/api/users?role=owner', { credentials: 'include' });
       const data = await res.json();
       if (data.users && data.users.length > 0) {
         setOwners(data.users);
@@ -65,7 +76,7 @@ export default function AdminPage() {
 
   const fetchRequests = async () => {
     try {
-      const res = await fetch('/api/court-requests');
+      const res = await fetch('/api/court-requests', { credentials: 'include' });
       const data = await res.json();
       setRequests(data.requests || []);
     } catch (error) {
@@ -77,6 +88,7 @@ export default function AdminPage() {
     try {
       const res = await fetch(`/api/court-requests/${requestId}/approve`, {
         method: 'POST',
+        credentials: 'include',
       });
 
       const data = await res.json();
@@ -102,6 +114,7 @@ export default function AdminPage() {
     try {
       const res = await fetch(`/api/court-requests/${requestId}/reject`, {
         method: 'POST',
+        credentials: 'include',
       });
 
       const data = await res.json();
@@ -165,6 +178,7 @@ export default function AdminPage() {
           pricePerHour: Number(formData.pricePerHour),
           availability,
         }),
+        credentials: 'include',
       });
 
       const data = await res.json();
@@ -365,7 +379,7 @@ export default function AdminPage() {
                 <p><strong>Deporte:</strong> {court.sport}</p>
                 <p><strong>Ubicación:</strong> {court.location}</p>
                 <p><strong>Precio:</strong> ${court.price_per_hour}/hora</p>
-                <p><strong>Puntuación:</strong> {court.average_rating.toFixed(1)}/5.0</p>
+                <p><strong>Puntuación:</strong> {(typeof court.average_rating === 'number' && !isNaN(court.average_rating) ? court.average_rating : 0).toFixed(1)}/5.0</p>
                 <p><strong>Disponibilidad:</strong></p>
                 <ul style={{ paddingLeft: '18px', color: '#475569' }}>
                   {court.availability.map((day) => (

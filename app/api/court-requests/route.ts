@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/pg";
-import { requireAuth, requireRole } from "@/lib/api-helpers";
+import { requireAuth, requireRole } from "@/lib/auth";
 import { v4 as uuid } from "uuid";
 
 export async function GET(request: NextRequest) {
   try {
-    const user: any = requireAuth(request as any);
+    const { user, error } = await requireAuth(request as any);
+    if (error) return error;
 
     if (user.role === "admin") {
       const { rows } = await pool.query("SELECT * FROM court_requests");
@@ -38,9 +39,9 @@ export async function GET(request: NextRequest) {
           : null,
       })),
     });
-  } catch {
+  } catch (err: any) {
     return NextResponse.json(
-      { error: "Error al obtener solicitudes" },
+      { error: err.message ?? "Error al obtener solicitudes" },
       { status: 500 }
     );
   }
@@ -48,7 +49,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user: any = requireRole(request as any, ["owner"] as any);
+    const { user, error } = await requireRole(request as any);
+    if (error) return error;
 
     const {
       name,
@@ -89,9 +91,9 @@ export async function POST(request: NextRequest) {
       message: "Solicitud enviada",
       request: { id },
     });
-  } catch {
+  } catch (err: any) {
     return NextResponse.json(
-      { error: "Error al crear solicitud" },
+      { error: err.message ?? "Error al crear solicitud" },
       { status: 500 }
     );
   }

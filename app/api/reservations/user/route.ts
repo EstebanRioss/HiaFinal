@@ -15,5 +15,5 @@ export async function GET(req: NextRequest) {
     [user!.id]
   );
 
-  return NextResponse.json(rows);
+  return NextResponse.json({ reservations: rows });
 }

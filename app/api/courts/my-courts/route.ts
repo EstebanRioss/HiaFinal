@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/pg";
-import { requireRole } from "@/lib/api-helpers";
+import { requireRole } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
-    const user: any = requireRole(request as any, ["owner"] as any);
+    const { user, error } = await requireRole(request as any);
+    if (error) return error;
+
+    if (user!.role !== 'owner') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     const { rows } = await pool.query(
       "SELECT * FROM courts WHERE owner_id = $1 ORDER BY created_at DESC",
-      [user.id]
+      [user!.id]
     );
 
     return NextResponse.json({

@@ -14,7 +14,14 @@ export default function ReservationsPage() {
 
   const fetchReservations = async () => {
     try {
-      const res = await fetch('/api/reservations');
+      const res = await fetch('/api/reservations/user', { credentials: 'include' });
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('Failed fetching reservations', res.status, text);
+        setReservations([]);
+        return;
+      }
+
       const data = await res.json();
       setReservations(data.reservations || []);
     } catch (error) {
@@ -88,7 +95,7 @@ export default function ReservationsPage() {
           <div className="grid">
             {reservations.map((reservation) => (
               <div key={reservation.id} className="court-card">
-                <h3>{reservation.court.name}</h3>
+                <h3>{(reservation as any).court?.name || (reservation as any).court_name || 'Cancha'}</h3>
                 <p><strong>Fecha:</strong> {new Date(reservation.date).toLocaleDateString('es-ES')}</p>
                 <p><strong>Horario:</strong> {reservation.start_time} - {reservation.end_time}</p>
                 <p><strong>Total:</strong> ${reservation.total_price}</p>
