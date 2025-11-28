@@ -1,0 +1,36 @@
+﻿
+> alquiler-canchas@1.0.0 start
+> next start
+
+  Γû▓ Next.js 14.2.33
+  - Local:        http://localhost:3000
+
+ Γ£ô Starting...
+ Γ£ô Ready in 3.3s
+
+> alquiler-canchas@1.0.0 start
+> next start
+
+  Γû▓ Next.js 14.2.33
+  - Local:        http://localhost:3000
+
+ Γ£ô Starting...
+ Γ£ô Ready in 1220ms
+
+> alquiler-canchas@1.0.0 start
+> next start
+
+  Γû▓ Next.js 14.2.33
+  - Local:        http://localhost:3000
+
+ Γ£ô Starting...
+ Γ£ô Ready in 587ms
+
+> alquiler-canchas@1.0.0 start
+> next start
+
+  Γû▓ Next.js 14.2.33
+  - Local:        http://localhost:3000
+
+ Γ£ô Starting...
+ Γ£ô Ready in 4.6s
