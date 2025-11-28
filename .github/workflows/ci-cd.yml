@@ -13,17 +13,21 @@ jobs:
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
-        
-      - name: Instalar Docker Compose plugin
+
+      # Instalación correcta de Docker Compose para Ubuntu 24.04 (Noble)
+      - name: Instalar Docker Compose plugin (Ubuntu 24.04)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y docker-compose-plugin
+          sudo mkdir -p /usr/local/lib/docker/cli-plugins
+          sudo curl -SL https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64 \
+            -o /usr/local/lib/docker/cli-plugins/docker-compose
+          sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
           docker compose version
 
       - name: Configurar Node 18
         uses: actions/setup-node@v4
         with:
           node-version: 18
+          cache: 'npm'
 
       - name: Instalar dependencias
         run: npm ci
@@ -55,37 +59,40 @@ jobs:
       - name: Esperar a que la base de datos esté lista
         run: |
           echo "Esperando Postgres..."
-          for i in {1..20}; do
+          for i in {1..30}; do
             if docker compose exec -T db pg_isready -U postgres > /dev/null 2>&1; then
               echo "✓ Postgres listo"
-              break
+              exit 0
             fi
             echo "Intento $i: esperando..."
             sleep 2
           done
+          echo "✗ Postgres NO arrancó"
+          docker compose logs db
+          exit 1
 
-      # Ahora que los servicios están arriba, recién hacemos el build de Next
       - name: Build de la aplicación Next.js
         run: npm run build
 
       - name: Esperar a que la app levante
         run: |
-          for i in {1..30}; do
+          echo "Esperando Next.js..."
+          for i in {1..40}; do
             if curl -f http://localhost:3000 > /dev/null 2>&1; then
-              echo "✓ App disponible"
+              echo "✓ App levantada"
               exit 0
             fi
-            echo "Esperando app... intento $i"
+            echo "Intento $i: esperando app..."
             sleep 2
           done
           echo "✗ La app no levantó"
-          docker compose logs app
+          docker compose logs app || true
           exit 1
 
-      - name: Ver logs de servicios
+      - name: Logs de servicios
         if: always()
         run: docker compose logs
 
-      - name: Parar y eliminar servicios
+      - name: Detener y eliminar servicios
         if: always()
         run: docker compose down -v
