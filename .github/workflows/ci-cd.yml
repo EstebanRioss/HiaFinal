@@ -14,7 +14,17 @@ jobs:
       - name: Checkout del código
         uses: actions/checkout@v4
 
-      # Instalación correcta de Docker Compose para Ubuntu 24.04 (Noble)
+      - name: Normalizar saltos de línea y dar permisos a scripts
+        run: |
+          # Eliminar CRLF en Windows
+          find ./db/replica -type f -name "*.sh" -exec sed -i 's/\r$//' {} \; || true
+          find ./pgbadger -type f -name "*.sh" -exec sed -i 's/\r$//' {} \; || true
+
+          # Dar permisos ejecutables
+          chmod +x ./db/replica/*.sh || true
+          chmod +x ./pgbadger/*.sh || true
+
+      # Instalación correcta de Docker Compose
       - name: Instalar Docker Compose plugin (Ubuntu 24.04)
         run: |
           sudo mkdir -p /usr/local/lib/docker/cli-plugins
@@ -60,7 +70,7 @@ jobs:
         run: |
           echo "Esperando Postgres..."
           for i in {1..30}; do
-            if docker compose exec -T db pg_isready -U postgres > /dev/null 2>&1; then
+            if docker compose exec -T db_primary pg_isready -U postgres > /dev/null 2>&1; then
               echo "✓ Postgres listo"
               exit 0
             fi
@@ -68,7 +78,7 @@ jobs:
             sleep 2
           done
           echo "✗ Postgres NO arrancó"
-          docker compose logs db
+          docker compose logs db_primary
           exit 1
 
       - name: Build de la aplicación Next.js
