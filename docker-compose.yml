@@ -9,23 +9,26 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DB_HOST: db
+      DB_HOST: pg_haproxy
       DB_USER: postgres
       DB_PASS: postgres
       DB_NAME: hia
       DB_PORT: 5432
-      DATABASE_URL: "postgresql://postgres:postgres@db:5432/hia"
+      DATABASE_URL: "postgresql://postgres:postgres@pg_haproxy:5432/hia"
     depends_on:
-      - db
+      - db_primary
+      - pg_haproxy
     restart: unless-stopped
 
-  db:
+  db_primary:
     image: postgres:15
-    container_name: hiafinal_db
+    container_name: hiafinal_db_primary
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: hia
+      REPL_USER: replicator
+      REPL_PASSWORD: replica_pass
     ports:
       - "5432:5432"
     command:
@@ -38,10 +41,74 @@ services:
       - "log_filename=postgresql.log"
       - "-c"
       - "log_statement=all"
+      - "-c"
+      - "wal_level=replica"
+      - "-c"
+      - "max_wal_senders=10"
+      - "-c"
+      - "wal_keep_size=64MB"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_primary_data:/var/lib/postgresql/data
       - ./db/init:/docker-entrypoint-initdb.d
     restart: unless-stopped
+
+  db_replica:
+    image: postgres:15
+    container_name: hiafinal_db_replica
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: hia
+      PRIMARY_HOST: db_primary
+      PRIMARY_PORT: 5432
+      REPL_USER: replicator
+      REPL_PASSWORD: replica_pass
+    volumes:
+      - postgres_replica_data:/var/lib/postgresql/data
+    depends_on:
+      - db_primary
+      - replica_init
+    restart: unless-stopped
+
+  pg_haproxy:
+    image: haproxy:2.8
+    container_name: hiafinal_pg_haproxy
+    depends_on:
+      - db_primary
+      - db_replica
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    restart: unless-stopped
+
+  failover:
+    image: postgres:15
+    container_name: hiafinal_failover
+    environment:
+      PGPASSWORD: postgres
+    depends_on:
+      - db_primary
+      - db_replica
+      - pg_haproxy
+    volumes:
+      - ./db/replication/failover_daemon.sh:/scripts/failover_daemon.sh:ro
+    entrypoint: ["bash","/scripts/failover_daemon.sh"]
+    restart: unless-stopped
+
+  replica_init:
+    image: postgres:15
+    container_name: hiafinal_replica_init
+    environment:
+      PRIMARY_HOST: db_primary
+      PRIMARY_PORT: 5432
+      REPL_USER: replicator
+      REPL_PASSWORD: replica_pass
+    depends_on:
+      - db_primary
+    volumes:
+      - postgres_replica_data:/var/lib/postgresql/data
+      - ./db/replication/replica_init.sh:/scripts/replica_init.sh:ro
+    entrypoint: ["bash","/scripts/replica_init.sh"]
+    restart: 'no'
 
   pgadmin:
     image: dpage/pgadmin4
@@ -52,7 +119,7 @@ services:
     ports:
       - "5050:80"
     depends_on:
-      - db
+      - db_primary
     restart: unless-stopped
 
   db_backup:
@@ -64,21 +131,21 @@ services:
       PGPASSWORD: postgres
     entrypoint: >
       bash -c "while true; do
-        pg_dump -h db -U postgres hia > /backups/backup_$(date +%Y%m%d_%H%M%S).sql;
+        pg_dump -h db_primary -U postgres hia > /backups/backup_$(date +%Y%m%d_%H%M%S).sql;
         echo 'Backup generado';
         sleep 86400;
       done"
     depends_on:
-      - db
+      - db_primary
     restart: unless-stopped
 
   pgbadger:
     image: dalibo/pgbadger
     container_name: hiafinal_pgbadger
     depends_on:
-      - db
+      - db_primary
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_primary_data:/var/lib/postgresql/data
       - ./pgbadger_reports:/out
       - ./pgbadger/run.sh:/run.sh
     # Normalize CRLF from host script at container startup and run the cleaned copy
@@ -135,7 +202,8 @@ services:
     restart: unless-stopped
 
 volumes:
-  postgres_data:
+  postgres_primary_data:
+  postgres_replica_data:
   grafana_data:
   glpi_mariadb_data:
   glpi_data:
