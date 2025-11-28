@@ -4,13 +4,10 @@ FROM node:18-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-
 RUN npm ci --legacy-peer-deps
 
 COPY . .
-
 RUN npm run build
-
 
 
 # ---------- STAGE 2: RUN ----------
@@ -19,10 +16,15 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Solo copiamos lo que REALMENTE existe en tu proyecto
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/next.config.js ./next.config.js
+
+# Copiamos toda la carpeta de scripts
+COPY ./docker-entrypoint-replica.d /docker-entrypoint-replica.d
+
+# Damos permisos dentro del contenedor
+RUN chmod +x /docker-entrypoint-replica.d/replica-entrypoint.sh
 
 RUN npm ci --production --legacy-peer-deps
 
