@@ -81,7 +81,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./pgbadger_reports:/out
       - ./pgbadger/run.sh:/run.sh
-    entrypoint: ["/bin/sh", "/run.sh"]
+    entrypoint: ["/bin/sh", "-c", "tr -d '\\r' < /run.sh > /tmp/run.sh && /bin/sh /tmp/run.sh"]
     restart: unless-stopped
 
   prometheus:
@@ -144,8 +144,57 @@ services:
       - glpi_data:/var/www/html/glpi
     restart: unless-stopped
 
+  nextcloud-db:
+    image: postgres:15
+    container_name: hiafinal_nextcloud_db
+    environment:
+      POSTGRES_DB: nextcloud
+      POSTGRES_USER: nextclouduser
+      POSTGRES_PASSWORD: nextcloudpass
+    volumes:
+      - nextcloud_db:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  nextcloud-redis:
+    image: redis:alpine
+    container_name: hiafinal_nextcloud_redis
+    volumes:
+      - nextcloud_redis:/data
+    restart: unless-stopped
+
+  nextcloud-app:
+    image: nextcloud
+    container_name: hiafinal_nextcloud_app
+    ports:
+      - "8080:80"
+    environment:
+      POSTGRES_HOST: nextcloud-db
+      POSTGRES_DB: nextcloud
+      POSTGRES_USER: nextclouduser
+      POSTGRES_PASSWORD: nextcloudpass
+      REDIS_HOST: nextcloud-redis
+    volumes:
+      - nextcloud_app:/var/www/html
+    depends_on:
+      - nextcloud-db
+      - nextcloud-redis
+    restart: unless-stopped
+
+  nextcloud-cron:
+    image: nextcloud
+    container_name: hiafinal_nextcloud_cron
+    volumes:
+      - nextcloud_app:/var/www/html
+    entrypoint: /cron.sh
+    depends_on:
+      - nextcloud-app
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   grafana_data:
   glpi_mariadb_data:
   glpi_data:
+  nextcloud_db:
+  nextcloud_app:
+  nextcloud_redis:
