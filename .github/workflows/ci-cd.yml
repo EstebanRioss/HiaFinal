@@ -48,18 +48,7 @@ jobs:
           mkdir -p ./backups
           mkdir -p ./pgbadger_reports
           mkdir -p ./monitoring
-
-      - name: Crear archivo de configuración de Prometheus
-        run: |
-          cat > ./monitoring/prometheus.yml << 'EOF'
-          global:
-            scrape_interval: 15s
-          scrape_configs:
-            - job_name: 'prometheus'
-              static_configs:
-                - targets: ['localhost:9090']
-          EOF
-
+          
       - name: Build de servicios con Docker Compose
         run: docker compose build
 
