@@ -13,6 +13,7 @@ services:
       DB_USER: postgres
       DB_PASS: postgres
       DB_NAME: hia
+      DB_HOST_REPLICA: db_replica
       DB_PORT: 5432
       DATABASE_URL: "postgresql://postgres:postgres@db_primary:5432/hia"
     depends_on:
@@ -66,6 +67,8 @@ services:
     volumes:
       - postgres_replica_data:/var/lib/postgresql/data
       - ./db/replica:/docker-entrypoint-replica.d:ro
+    ports:
+      - "5433:5432"
     depends_on:
       - db_primary
     entrypoint: ["/docker-entrypoint-replica.d/replica-entrypoint.sh"]
