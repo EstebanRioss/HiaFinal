@@ -125,6 +125,17 @@ services:
       - "--config.file=/etc/prometheus/prometheus.yml"
     restart: unless-stopped
 
+  postgres_exporter:
+    image: prometheuscommunity/postgres-exporter
+    container_name: hiafinal_postgres_exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://postgres:postgres@db_primary:5432/hia?sslmode=disable"
+    ports:
+      - "9187:9187"
+    depends_on:
+      - db_primary
+    restart: unless-stopped
+
   grafana:
     image: grafana/grafana:latest
     container_name: hiafinal_grafana
