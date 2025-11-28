@@ -9,26 +9,23 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DB_HOST: db_primary
+      DB_HOST: db
       DB_USER: postgres
       DB_PASS: postgres
       DB_NAME: hia
       DB_PORT: 5432
-      DATABASE_URL: "postgresql://postgres:postgres@db_primary:5432/hia"
+      DATABASE_URL: "postgresql://postgres:postgres@db:5432/hia"
     depends_on:
-      - db_primary
-      - db_replica
+      - db
     restart: unless-stopped
 
-  db_primary:
+  db:
     image: postgres:15
-    container_name: hiafinal_db_primary
+    container_name: hiafinal_db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: hia
-      REPL_USER: replicator
-      REPL_PASSWORD: replica_pass
     ports:
       - "5432:5432"
     command:
@@ -41,37 +38,10 @@ services:
       - "log_filename=postgresql.log"
       - "-c"
       - "log_statement=all"
-      - "-c"
-      - "wal_level=replica"
-      - "-c"
-      - "max_wal_senders=10"
-      - "-c"
-      - "wal_keep_size=64MB"
     volumes:
-      - postgres_primary_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
       - ./db/init:/docker-entrypoint-initdb.d
     restart: unless-stopped
-
-  db_replica:
-    image: postgres:15
-    container_name: hiafinal_db_replica
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: hia
-      PRIMARY_HOST: db_primary
-      PRIMARY_PORT: 5432
-      REPL_USER: replicator
-      REPL_PASSWORD: replica_pass
-    volumes:
-      - postgres_replica_data:/var/lib/postgresql/data
-      - ./db/replica:/docker-entrypoint-replica.d:ro
-    depends_on:
-      - db_primary
-    entrypoint: ["/docker-entrypoint-replica.d/replica-entrypoint.sh"]
-    restart: unless-stopped
-
-  # (No additional cluster services; simple primary + replica streaming replication)
 
   pgadmin:
     image: dpage/pgadmin4
@@ -82,7 +52,7 @@ services:
     ports:
       - "5050:80"
     depends_on:
-      - db_primary
+      - db
     restart: unless-stopped
 
   db_backup:
@@ -94,25 +64,24 @@ services:
       PGPASSWORD: postgres
     entrypoint: >
       bash -c "while true; do
-        pg_dump -h db_primary -U postgres hia > /backups/backup_$(date +%Y%m%d_%H%M%S).sql;
+        pg_dump -h db -U postgres hia > /backups/backup_$(date +%Y%m%d_%H%M%S).sql;
         echo 'Backup generado';
         sleep 86400;
       done"
     depends_on:
-      - db_primary
+      - db
     restart: unless-stopped
 
   pgbadger:
     image: dalibo/pgbadger
     container_name: hiafinal_pgbadger
     depends_on:
-      - db_primary
+      - db
     volumes:
-      - postgres_primary_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
       - ./pgbadger_reports:/out
       - ./pgbadger/run.sh:/run.sh
-    # Normalize CRLF from host script at container startup and run the cleaned copy
-    entrypoint: ["/bin/sh", "-c", "tr -d '\\r' < /run.sh > /tmp/run.sh && /bin/sh /tmp/run.sh"]
+    entrypoint: ["/bin/sh", "/run.sh"]
     restart: unless-stopped
 
   prometheus:
@@ -125,6 +94,17 @@ services:
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
     restart: unless-stopped
+
+  postgres_exporter:
+    image: prometheuscommunity/postgres-exporter
+    container_name: hiafinal_postgres_exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://postgres:postgres@db:5432/hia?sslmode=disable"
+    ports:
+      - "9187:9187"
+    depends_on:
+      - db
+    restart: unless-stopped 
 
   grafana:
     image: grafana/grafana:latest
@@ -165,8 +145,7 @@ services:
     restart: unless-stopped
 
 volumes:
-  postgres_primary_data:
-  postgres_replica_data:
+  postgres_data:
   grafana_data:
   glpi_mariadb_data:
   glpi_data:
