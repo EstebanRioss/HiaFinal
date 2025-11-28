@@ -24,9 +24,16 @@ export async function GET(
     if (!court)
       return NextResponse.json({ error: "Cancha no encontrada" }, { status: 404 });
 
+    // Ensure availability is parsed as JSON
+    const availability = court.availability
+      ? typeof court.availability === 'string'
+        ? JSON.parse(court.availability)
+        : court.availability
+      : [];
+
     const dayOfWeek = getDayOfWeekFromDate(date);
 
-    const allSlots = generateHourlySlots(court.availability, dayOfWeek);
+    const allSlots = generateHourlySlots(availability, dayOfWeek);
 
     const resReservations = await pool.query(
       `

@@ -9,9 +9,23 @@ import { query } from "./pg";
  */
 export async function getAuthUser(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
-  if (!authHeader) return null;
+  let token: string | undefined;
+  if (authHeader) token = authHeader.split(" ")[1];
 
-  const token = authHeader.split(" ")[1];
+  if (!token) {
+    try {
+      if ((req as any).cookies && typeof (req as any).cookies.get === 'function') {
+        const c = (req as any).cookies.get('token');
+        if (c) token = c.value ?? c;
+      } else {
+        const c = (req as any).cookies?.get?.('token');
+        if (c) token = c.value ?? c;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   if (!token) return null;
 
   const payload = verifyToken(token);
@@ -42,14 +56,17 @@ export async function requireAuth(req: NextRequest) {
 /**
  * Middleware para rutas que requieren rol específico.
  */
-export async function requireRole(req: NextRequest, role: string) {
+export async function requireRole(req: NextRequest, role?: string | string[]) {
   const user = await getAuthUser(req);
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (user.role !== role) {
+  if (!role) return user;
+
+  const roles = Array.isArray(role) ? role : [role];
+  if (!roles.includes(user.role)) {
     return NextResponse.json({ error: "Forbidden: insufficient permissions" }, { status: 403 });
   }
 

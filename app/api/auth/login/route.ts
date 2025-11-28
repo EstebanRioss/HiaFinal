@@ -15,5 +15,11 @@ export async function POST(req: NextRequest) {
 
   const token = generateToken(user);
 
-  return NextResponse.json({ token });
+  const res = NextResponse.json({ token });
+  // Set httpOnly cookie so browser sends it automatically on subsequent requests
+  // Include SameSite and secure flags appropriately
+  const cookieOptions: any = { httpOnly: true, path: '/', maxAge: 7 * 24 * 60 * 60, sameSite: 'lax' };
+  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+  res.cookies.set('token', token, cookieOptions);
+  return res;
 }

@@ -35,14 +35,26 @@ export default function OwnerPage() {
   const fetchData = async () => {
     try {
       const [courtsRes, requestsRes] = await Promise.all([
-        fetch('/api/courts/my-courts'),
-        fetch('/api/court-requests'),
+        fetch('/api/courts/my-courts', { credentials: 'include' }),
+        fetch('/api/court-requests', { credentials: 'include' }),
       ]);
       
       const courtsData = await courtsRes.json();
       const requestsData = await requestsRes.json();
-      
-      setCourts(courtsData.courts || []);
+
+      const normalizedCourts = (courtsData.courts || []).map((c: any) => ({
+        ...c,
+        average_rating: typeof c.average_rating === 'number' ? c.average_rating : Number(c.average_rating) || 0,
+        price_per_hour: typeof c.price_per_hour === 'number' ? c.price_per_hour : Number(c.price_per_hour) || 0,
+        total_ratings: typeof c.total_ratings === 'number' ? c.total_ratings : Number(c.total_ratings) || 0,
+        availability: c.availability
+          ? typeof c.availability === 'string'
+            ? JSON.parse(c.availability)
+            : c.availability
+          : [],
+      }));
+
+      setCourts(normalizedCourts);
       setRequests(requestsData.requests || []);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -98,6 +110,7 @@ export default function OwnerPage() {
           pricePerHour: Number(formData.pricePerHour),
           availability,
         }),
+        credentials: 'include',
       });
 
       const data = await res.json();
@@ -133,6 +146,7 @@ export default function OwnerPage() {
           pricePerHour: Number(formData.pricePerHour),
           availability,
         }),
+        credentials: 'include',
       });
 
       const data = await res.json();
@@ -380,7 +394,7 @@ export default function OwnerPage() {
                   <p><strong>Deporte:</strong> {court.sport}</p>
                   <p><strong>Ubicación:</strong> {court.location}</p>
                   <p><strong>Precio:</strong> ${court.price_per_hour}/hora</p>
-                <p><strong>Puntuación promedio:</strong> {court.average_rating.toFixed(1)}/5.0</p>
+                <p><strong>Puntuación promedio:</strong> {(typeof court.average_rating === 'number' && !isNaN(court.average_rating) ? court.average_rating : 0).toFixed(1)}/5.0</p>
                 <p><strong>Total de calificaciones:</strong> {court.total_ratings}</p>
                 <p><strong>Disponibilidad:</strong></p>
                 <ul style={{ paddingLeft: '18px', color: '#475569' }}>

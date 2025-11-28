@@ -24,7 +24,18 @@ export default function CourtsPage() {
     try {
       const res = await fetch('/api/courts');
       const data = await res.json();
-      setCourts(data.courts || []);
+      const normalized = (data.courts || []).map((c: any) => ({
+        ...c,
+        average_rating: typeof c.average_rating === 'number' ? c.average_rating : Number(c.average_rating) || 0,
+        price_per_hour: typeof c.price_per_hour === 'number' ? c.price_per_hour : Number(c.price_per_hour) || 0,
+        total_ratings: typeof c.total_ratings === 'number' ? c.total_ratings : Number(c.total_ratings) || 0,
+        availability: c.availability
+          ? typeof c.availability === 'string'
+            ? JSON.parse(c.availability)
+            : c.availability
+          : [],
+      }));
+      setCourts(normalized);
     } catch (error) {
       console.error('Error fetching courts:', error);
     } finally {
@@ -53,15 +64,16 @@ export default function CourtsPage() {
   };
 
   const renderStars = (rating: number) => {
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
+    const r = typeof rating === 'number' && !isNaN(rating) ? rating : 0;
+    const fullStars = Math.floor(r);
+    const hasHalfStar = r % 1 >= 0.5;
     return (
       <div className="rating">
         {'★'.repeat(fullStars)}
         {hasHalfStar && '☆'}
         {'☆'.repeat(5 - fullStars - (hasHalfStar ? 1 : 0))}
         <span style={{ color: '#666', fontSize: '14px', marginLeft: '5px' }}>
-          ({rating.toFixed(1)})
+          ({r.toFixed(1)})
         </span>
       </div>
     );
